@@ -37,17 +37,39 @@ def get_products_from_category(product_id:int, category_id:int)->list:
     products = cursor.fetchall()
     p = []
     values = f"({product_id},{product_id}, 0, '', 0)"
+    hide = ""
     for prod in products:
         values +=","
         values += f"({product_id},{prod[0]}, 0, '', 0)"
+        hide += f"({prod[0]}),"
     sql = f"INSERT INTO oc_hpmodel_links (parent_id, product_id, sort, image, type_id) VALUES {values}"
+    cursor.execute(sql)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def set_hidden():
+    sql='INSERT INTO oc_hpmodel_product_hidden (pid) SELECT product_id FROM oc_hpmodel_links WHERE parent_id<>product_id'
+    conn = create_connection()
+    cursor = conn.cursor()
     cursor.execute(sql)
     conn.commit()
     cursor.close()
     conn.close()
 
+def truncate():
+    sql = 'TRUNCATE oc_hpmodel_links; ' \
+          'TRUNCATE oc_hpmodel_product_hidden;'
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute(sql)
+    cursor.close()
+    conn.close()
 
 if __name__ == '__main__':
+    truncate()
     category_list = get_category_list()
     for cat in category_list:
         get_products_from_category(cat[0], cat[2])
+    set_hidden()
